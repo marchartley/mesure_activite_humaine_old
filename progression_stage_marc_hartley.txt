@@ -1,0 +1,224 @@
+Progress:
+
+08/02:
+- Playing around with RealSense cam on Jetson, vizualisation on Viewer
+
+09/02:
+- Installation of RealSenseSDK on my PC
+- Installation of Cubemos on my PC 
+- Tried installation on Jetson but Cubemos not OK -> need architecture AMD, but have ARM
+- Installation of RealSenseSDK on jetson OK (python == 3.6)
+
+10/02:
+- Recording of the camera as ROSbag files -> very heavy (~250Mo every 10 seconds of footage)
+- Looking into "pose classification" with Teachable Machines -> offers Tensorflow.js models so maybe not good
+- Interested about labelling process: need of an editor?
+	- Also, do we want pose classification (good in general) or temporal gestures (interesting for elders [falling, walking, jumping, etc...])
+	- Do we keep RGB+depth or point clouds?
+- Interested about the "walking analysis": mesuring speed / footsteps
+- Interested in "Carte du Maraudeur":
+	- We can get any point as 3D point cloud, so 3D coord
+	- But need of calibration (from 3D camera view to "carte du Maraudeur" -> wall angles?) maybe with RANSAC / SVD
+- Interested in "person identification". Found a project with VinoToolkit: https://github.com/yas-sim/person-detect-reidentification
+	- Will be left behind for a while
+	
+11/02:
+- Tried to find a way to compress streams.
+	For now, it is possible to extract color and depth streams from ROSbags and convert into 2 .mp4 files.
+	-> Compression rate ~ 393:1
+- Look how to go from the camera 3D coord to real world 3D coord.
+	-> Found a formula that seems to work : P = O1 + M1 . p1 = O2 + M2 . p2 (with M1 = axis vectors in columns)
+		Hopefully, for p1 to p2 : [M1]T (O2 - O1 + M2 p2)
+							or    [M2]T (O1 - O2 + M1 p1)
+	-> Todo : Detect at least 3 points and calibrate from them. Using AruCo for now
+	
+12/02:
+- Learn to convert camera 3D coord to real world coord using AruCo marker
+	-> We can get the position of a person (and each keypoints) in real world
+- Started to display it on a map
+	-> It's still missing:
+		- flexibility (change only few lines to display the map of the office or the corridor)
+		- smoothing for the position of people (precision ~5-10cm, so it's a little bit jittering)
+		- esthetism, to be presentable (display a background, footsteps to represent people, nice little colors, ...)
+- Has not been done and might need some work:
+	- people "recognition", allowing to display the ID (e.g. name) of the person 
+	
+	
+------------------------------------
+
+15/02:
+- Improved a little the marauder map
+- Installing OpenPose on Windows and Jetson & adapt python code
+
+16/02:
+- After installing OpenPose on my computer, we will maybe not continue with it, as the process takes ~15s/frame (full resolution) or 2s/frame (extremely reduced resolution)
+	- I work on CPU, but it still looks way to long (~200 times slower than Cubemos)
+-> Maybe look for wrnchAI, which should be about 3-4 times faster than OpenPose (so only 70 times slower than Cubemos) but might be expensive
+
+For now, we will stay on Cubemos 
+
+17/02:
+- Looking for state-of-the-art models for human pose estimation.
+	-> Currently studying "EvoPose2D" from "wmcnally" (https://github.com/wmcnally/evopose2d)	
+		-> Result : Quite fast (1.5s on CPU), but is only made for single-person detection.
+			Either we add a human segmenter before the process
+			or we try a multi-pose detecter
+	-> DarkPose might be oriented Linux, so I didn't manage to test on Windows  : https://github.com/ilovepose/DarkPose
+	-> OpenPose Light (by Daniil Osokin), but needs CUDA (so doesn't work on my laptop)  : https://github.com/Daniil-Osokin/lightweight-human-pose-estimation.pytorch
+- Made the capturing / recording of the camera automatically start/stop when a person is detected
+
+- Tried to install the ManagerSDK on Jetson (download/deploy easily all of Jetson softwares [and maybe ZOO?]) but it requires a AMD64, while the Jetson is ARM64
+	-> Is it because the SD card has been flashed from a ARM Linux? Is it normal?
+		Anyway, no ManagerSDK for now.
+
+18/02:
+- Re-installation of OpenPose on the Jetson, with the GPU it might be much faster than I thought (looking at the stats on my computer)
+	-> That was awully difficult. Multiple problems (ex: numpy 1.19.5 cause core errors, so need to retrograde to 1.19.4)
+	-> 3 files from pyopenpose must stay in the project folder to work
+	-> Tried one time but program froze. Need to try with easier script (example scripts)
+- Installing Rsnapshot (alternative to Timeshift, but for ARM64) to do backups
+	-> need to understand how to do a routine for a backup every 1-2 days
+
+19/02:
+- "Forget" OpenPose on Jetson: it's very long and can cause crashes
+- Installation of trt_pose on Jetson 
+
+----------------------------------------
+
+22/02:
+- Tried to integrate TRT_Pose to Python on the Jetson 
+	-> The camera must be on the bottom USB slot
+	
+23/02:
+- TRT_pose integrated on Jetson, need to try multiple users on cam.
+- Stopped aligning color and depth frames and use intrinsic/extrinsic functions proposed by RealSense instead.
+- TRT_pose is not a "Tracker" (no memory from one frame to another), so keypoints from one object can be splitted into multiple detected objects
+	-> maybe use a kind of filtering between frames.
+	-> Not good at legs-only, need at least mid-body part also
+- Stop trying new Pose Estimators, stick to Cubemos on Windows.
+- Foot position 3D can be found and get velocity
+	-> velocity_threshold ~50 to 130 mm/frame 
+	-> Problem with legs overlapping.
+	
+24/02:
+- Try getting the orientation of the body from the upper-body = angle from vertical axis only.
+	-> Done and looks fine, just need to know if looking right or left.
+- A footstep is defined as so:
+	- the velocity of the foot > threshold
+	- the footstep can be canceled if the other leg overlap (otherwise it mess up the depth value)
+	- the other foot has walked before 
+	- Cubemos has a good confidence in the foot position (> 0.4 for now)
+	
+- Results change on two different test. Need to find a way to playback frame by frame.
+- Quite accurate for normal footsteps speed, with a velocity threshold = 40 mm/frame (need to fix the unit)
+- Didn't try with "slow walk".
+- Don't save/play .bag files from USB stick, too low bitrate
+
+25/02:
+- Clearly, no way to use Cubemos with depth map 
+- With vel_thresh=40 and tracing=3, I find 63 footsteps intead of 61 on slow (3% er) or 31 instead of 28 on normal (11% er) [or 31 instead of 30 (3%) depending on how we count steps]
+- Try to improve the recording/playback functions to be seamless
+- Improving the footsteps detection post-process with smoothing and curve analysis (in feet_analysis.py)
+- Maybe it's possible to detect a turnaround just with the footsteps pattern
+
+
+- Using background substraction can maybe improve step counts
+	-> Not used for now, because we would need a camera to be settled for a while before detecting motion.
+
+26/02:
+- Marked "turnaround" and "out of screen" on normal and slow velocity.
+- Should also be done by looking at the 2D position (Or 2x 1 dimension)
+- Done with the distance between the feet, results are quite good, but need to find a parameter value.
+
+-----------------------------------------
+
+
+01/03:
+- Calculated Ct (Cycle time), tau (Stance/Swing ratio) and Tds (Double Support Time)
+
+02/03:
+- Not here for the morning, was at the dentist
+- Precision of Aruco quite bad (very small), maybe need to print a bigger one if we want to use it
+- Need filtering when keypoint not found (previous position? [real-time] average position? [post-processing])
+
+03/03:
+- Besoin de calculer la précision de la caméra (voir pour un sol connecté ou autre)
+- Installation de Docker et Grafana sur le PC [ECHEC]
+- Improved Automatic capture -> Starting time is quite short (~1sec) and delay before "shutdown" can be set in seconds.
+
+04/03:
+- Presentation de synthèse de stage
+- Analysis of walk walking almost the same when looking at the knees instead of ankles
+- Tried using ELAN, there are multiple steps to do:
+	-> transform RGB capture to mp4 
+	-> Look for a way to ID the people so it can be used in annotation and training
+	-> annotate the videos on the software and save as CSV ("Exporter vers..." > "Texte délimité par des tabulations")
+	-> process the CSV, extract timestamps, align with real video timestamps 
+	-> Import into Grafana 
+
+----------------------------------------------
+
+08/03:
+- Installing the VPN on my PC 
+	-> Didn't manage, but can connect to "wifilistic" (must also be faster)
+- Want to save ROSbags on the IoT server and import the keypoints on the InfluxDB server 
+	-> Tried that, but crashed InfluxDB on the server...
+	
+- Installed (correctly!) InfluxDB on PC
+	-> Am able to store keypoints in the DB and retrieve it for a single sequence
+
+09/03:
+- Adapt all codes to use the InfluxDB keypoints positions
+- Want to compute the orientation of the body
+
+10/03:
+- Improved the InfluxDB protocol
+- calculated the direction of the body from the shoulders and hips 
+	-> Only based on the left shoulder for now, maybe consider doing it on right shoulder and hips 
+- Added the use of it in the Maraudeur Map
+
+11/03:
+- The Cubemos API key can be used infinately if I set the date of the PC 
+	-> between 11/02/2021 and 11/03/2021 : 5077476e-6aad-11eb-b9b0-e6bc47cf872e (marc.hartley@hotmail.com)
+	-> between 11/03/2021 and 11/04/2021 : 17e8e080-8243-11eb-922d-26771f1e289c (marc.hartley@etu.univ-nantes.fr)
+	(Just run "C:\Program Files\Cubemos\SkeletonTracking\scripts\post_installation.bat" and copy paste the key corresponding to the date)
+	
+- "Body orientation" is the mean calculated from the right shoulder, left shoulder, right hip, left hip
+- The automatic capturer now uses threads to detect skeletons, so FPS went from 7 to 30.
+	-> There is some kind of latency (FPS ~ 15-20) after 15 sec of recording, but it's the same with the native app, so it must be normal (ros-bag file becomes heavy)
+
+----------------------------------------------
+
+15/03:
+- Going from 2D to 3D then 3D to 2D creates an error of 2cm on the X-axis (depth can be greatly impacted)
+- Installing openVino on PC : "pip install openvino"
+	-> Not used because it uses the full body, and looks more about cloths than face -> a DB would work only for 1 day
+- Using face-recognition : "pip install face-recognition"
+	-> https://github.com/ageitgey/face_recognition
+	-> Looks OK for now, but doesn't recognize faces with masks up (can maybe be forced by calculating "face_locations" ourselves)
+		-> Also, my face was recognized only 3.6m away (with glasses), up to 4.2 without glasses and 5m without hair
+	-> Need to implement a kind of SVM solution on top to use multiple face images of each person : https://github.com/ageitgey/face_recognition/blob/master/examples/face_recognition_svm.py
+		-> Or maybe another classifier that can use "partial_fit" ?
+		
+16/03:
+- We can force the face-recognition if we give specific coordinates. In this case we calculate it from the keypoints of the skeleton (horizontal: ears, vertical: neck to nose*2)
+- Not sure about the accuracy, need to test with more data than my own face
+	-> A bit inaccurate for one frame, need to check the sum of "distances" on multiple frames (> 2)
+- Downloaded the OpenVINO Zoo just in case 
+	-> pip install networkx
+	-> pip install onnx
+	-> "C:\Program Files (x86)\Intel\openvino_2021.2.185\bin\setupvars.bat"
+	-> python "C:\Program Files (x86)\Intel\openvino_2021.2.185\deployment_tools\open_model_zoo\tools\downloader\downloader.py" --all 
+	-> python "C:\Program Files (x86)\Intel\openvino_2021.2.185\deployment_tools\open_model_zoo\tools\downloader\converter.py" --all
+- The skeletons in the DB have now a skeleton_id, in case more than one person is on the screen 
+
+- Had access to the server, but...
+	-> .bag sequence has a bitrate of 60Mo/s 
+	-> server has a bitrate of 1Mo/s (from Wifilistic) or 4 Mo/s (eduspot) or 6Mo/s (eduroam)
+- Need to check if file is playable from the server 
+
+
+Next step :
+	[ ] Finding a good action classifier (https://paperswithcode.com/task/skeleton-based-action-recognition) ?
+	[ ] See for labelisation -> ELAN
+	
