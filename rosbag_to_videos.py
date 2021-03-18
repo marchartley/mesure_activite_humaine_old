@@ -75,11 +75,11 @@ if __name__ == "__main__":
 				# cv2.imshow('depth', cv2.cvtColor(np.array(depth_frame), cv2.COLOR_BGR2RGB))
 				frames_color.append(np.array(color_frame))
 				frames_depth.append(np.array(depth_frame))
-				cv2.imshow("depth", cv2.cvtColor(np.array(depth_frame), cv2.COLOR_BGR2RGB))
+				# cv2.imshow("depth", cv2.cvtColor(np.array(depth_frame), cv2.COLOR_BGR2RGB))
 
-			if cv2.waitKey(1) & 0xFF == ord('q'):
-				pipeline = recording.stop_playback(pipeline)
-				break
+			# if cv2.waitKey(1) & 0xFF == ord('q'):
+			# 	pipeline = recording.stop_playback(pipeline)
+			# 	break
 
 		pipeline = recording.stop_playback(pipeline)
 

@@ -215,7 +215,18 @@ For now, we will stay on Cubemos
 - Had access to the server, but...
 	-> .bag sequence has a bitrate of 60Mo/s 
 	-> server has a bitrate of 1Mo/s (from Wifilistic) or 4 Mo/s (eduspot) or 6Mo/s (eduroam)
+	-> Even copying/moving a file from the explorer is limited ~1-6Mo/s 
 - Need to check if file is playable from the server 
+	-> Still very very slow (~2 FPS, for a video in 30FPS...)
+	
+17/03:
+- Transform recordings into a mp4 for using ELAN done.
+- Added filters on the depth map to get some kind of more accurate depths
+- Display a bounding box around person, that rotate when person turn.
+
+18/03:
+- Display name above bounding box in "draw_skeleton.py"
+	-> Guessing this demonstrator is finished
 
 
 Next step :

@@ -1,6 +1,10 @@
 
 import numpy as np
+import scipy.spatial.transform
+import math
 from enum import Enum, auto
+import cv2
+import convert_realsense_to_real_world as coord_conversion
 
 
 # /!\ Names of parts must match skeleton_tracker.cubemos_keypoints names
@@ -145,6 +149,8 @@ class HumanSkeleton():
 			return False
 
 	def body_part_intersection(self, start1, end1, start2, end2, thickness1, thickness2):
+		if start1 is None or start2 is None or end1 is None or end2 is None:
+			return False
 		# Get back to 2D if the coords are in higher dimension
 		start1 = np.array(start1[:2])
 		end1 = np.array(end1[:2])
@@ -205,7 +211,9 @@ class HumanSkeleton():
 		if len(body_orientation) == 0:
 			return None
 		else:
-			return np.mean(np.array(body_orientation), axis = 0)
+			mean = np.mean(np.array(body_orientation), axis = 0)
+			mean = mean / np.linalg.norm(mean)
+			return mean
 
 	def get_center_of_gravity(self):
 		body = []
@@ -220,6 +228,23 @@ class HumanSkeleton():
 
 		if len(body) == 0:
 			return self.POSITION_NOT_FOUND3D
+
+		else:
+			return np.mean(np.array(body), axis = 0)
+
+	def get_center_of_gravity_2d(self):
+		body = []
+		if self.get_keypoint2D("RIGHT_SHOULDER") is not self.POSITION_NOT_FOUND2D:
+			body.append(self.get_keypoint2D("RIGHT_SHOULDER"))
+		if self.get_keypoint2D("LEFT_SHOULDER") is not self.POSITION_NOT_FOUND2D:
+			body.append(self.get_keypoint2D("LEFT_SHOULDER"))
+		if self.get_keypoint2D("RIGHT_HIP") is not self.POSITION_NOT_FOUND2D:
+			body.append(self.get_keypoint2D("RIGHT_HIP"))
+		if self.get_keypoint2D("LEFT_HIP") is not self.POSITION_NOT_FOUND2D:
+			body.append(self.get_keypoint2D("LEFT_HIP"))
+
+		if len(body) == 0:
+			return self.POSITION_NOT_FOUND2D
 
 		else:
 			return np.mean(np.array(body), axis = 0)
@@ -255,10 +280,94 @@ class HumanSkeleton():
 				face_location = (top, right, bottom, left)
 		return face_location
 
+	def get_bounding_box_3d(self):
+		try:
+			min_x = min([self.get_keypoint3D(key)[0] for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D])
+			max_x = max([self.get_keypoint3D(key)[0] for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D])
+			min_y = min([self.get_keypoint3D(key)[1] for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D])
+			max_y = max([self.get_keypoint3D(key)[1] for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D])
+			min_z = min([self.get_keypoint3D(key)[2] for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D])
+			max_z = max([self.get_keypoint3D(key)[2] for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D])
+
+			return [np.array(coord) for coord in [
+				[min_x, min_y, min_z],
+				[min_x, min_y, max_z],
+				[min_x, max_y, min_z],
+				[min_x, max_y, max_z],
+				[max_x, min_y, min_z],
+				[max_x, min_y, max_z],
+				[max_x, max_y, min_z],
+				[max_x, max_y, max_z],
+			]]
+		except ValueError:
+			return None
+
+	def rotate_bounding_box_with_body_orientation(self, increase_body_height = False):
+		if self.get_bounding_box_3d() is None:
+			return None
+		body_orientation = self.get_body_orientation()
+		if body_orientation is None:
+			return None
+		height_multiplier = increase_body_height
+		if isinstance(height_multiplier, bool):
+			if height_multiplier:
+				height_multiplier = 1.0
+			else:
+				height_multiplier = 1.1
+		mean_pos = self.get_center_of_gravity()
+		rotation = scipy.spatial.transform.Rotation.from_rotvec([0, body_orientation[0], 0]) # Only take care of Y-axis
+		rotation_matrix = rotation.as_matrix()
+		new_coords = []
+		for coord in self.get_bounding_box_3d():
+			new_coord = coord - mean_pos
+			new_coord = np.dot(new_coord, rotation_matrix)
+			new_coord[1] *= height_multiplier # Increase Y-axis
+			new_coord += mean_pos
+			new_coords.append(new_coord)
+
+		return new_coords
+
+	def display_BBox(self, frame, pipeline, color = (0, 0, 0), display_front = True, display_back = True):
+		body_BBox = self.rotate_bounding_box_with_body_orientation(increase_body_height = True)
+		# body_pos = self.get_center_of_gravity()
+		min_z = np.min(body_BBox, axis = 0)
+		max_z = np.max(body_BBox, axis = 0)
+		if body_BBox is not None:
+			display_coord = [True] * len(body_BBox)
+			for i in range(len(display_coord)):
+				# if (not display_front and body_BBox[i][2] < body_pos[2]) or (not display_back and body_BBox[i][2] > body_pos[2]):
+				if (not display_front and body_BBox[i][2] == min_z[2]) or (not display_back and body_BBox[i][2] == max_z[2]):
+					display_coord[i] = False
+			p000, p001, p010, p011, p100, p101, p110, p111 = list(map(lambda coord: tuple(map(int, coord_conversion.back_to_pixel(coord, pipeline))), body_BBox))
+			if display_coord[0] and display_coord[1]:
+				frame = cv2.line(frame, p000, p001, color, 2)
+			if display_coord[0] and display_coord[2]:
+				frame = cv2.line(frame, p000, p010, color, 2)
+			if display_coord[0] and display_coord[4]:
+				frame = cv2.line(frame, p000, p100, color, 2)
+			if display_coord[2] and display_coord[6]:
+				frame = cv2.line(frame, p010, p110, color, 2)
+			if display_coord[2] and display_coord[3]:
+				frame = cv2.line(frame, p010, p011, color, 2)
+			if display_coord[3] and display_coord[7]:
+				frame = cv2.line(frame, p011, p111, color, 2)
+			if display_coord[3] and display_coord[1]:
+				frame = cv2.line(frame, p011, p001, color, 2)
+			if display_coord[4] and display_coord[6]:
+				frame = cv2.line(frame, p100, p110, color, 2)
+			if display_coord[4] and display_coord[5]:
+				frame = cv2.line(frame, p100, p101, color, 2)
+			if display_coord[5] and display_coord[7]:
+				frame = cv2.line(frame, p101, p111, color, 2)
+			if display_coord[5] and display_coord[1]:
+				frame = cv2.line(frame, p101, p001, color, 2)
+			if display_coord[6] and display_coord[7]:
+				frame = cv2.line(frame, p110, p111, color, 2)
+		return frame
+
 	def check_keypoints(self, names):
 		for name in names:
 			if self.get_keypoint2D(name) is self.POSITION_NOT_FOUND2D:
 				return False
 		return True
-
 
