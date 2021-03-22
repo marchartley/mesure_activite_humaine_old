@@ -4,7 +4,6 @@ import glob
 import skeleton_tracker as st
 import pyrealsense2 as rs
 import face_recognition  # Must be imperatively placed AFTER import pyrealsense2
-import numpy as np
 import colorsys
 import time
 
@@ -18,7 +17,7 @@ import recording
 
 import pickle
 import os.path
-
+import sklearn.svm as svm
 
 def create_encodings(images_filenames, save_filename = None, verbose = False):
 	all_encodings = []
@@ -57,44 +56,81 @@ def get_encodings(filename, verbose = False):
 	return all_encodings
 
 
-def recognize_person(human, frame, all_faces_encodings):
+def recognize_person(human, frame, all_faces_encodings = None, classifier = None):
 	if human.get_face_location() is None:
 		return None
 	face_locations = [human.get_face_location()] # Create an array with one element that are the coords of the face
 	face_encodings = face_recognition.face_encodings(frame, face_locations, model = 'small')
-	face_distances = []
+	probabilities = []
 	best_match_index = None
 
 	if len(face_encodings) == 1: # Only one face to detect here
 		encoding = face_encodings[0]
 		# matches = face_recognition.compare_faces(all_faces_encodings, encoding)
+		if all_faces_encodings is not None:
+			probabilities = 1 - face_recognition.face_distance(all_faces_encodings, encoding)
+			best_match_index = np.argmin(probabilities)
+		elif classifier is not None:
+			best_match_index = classifier.predict([encoding])[0]
+			probabilities = classifier.predict_proba([encoding])[0]
+			probabilities[best_match_index] *= 3
+			# [0] * 1000
+			# probabilities[best_match_index] = 1.0
+			# probabilities = classifier.predict_proba([encoding])[0]
+			# best_match_index = np.argmax(probabilities)
+	return np.array(probabilities), best_match_index
 
-		face_distances = face_recognition.face_distance(all_faces_encodings, encoding)
-		best_match_index = np.argmin(face_distances)
-	return face_distances, best_match_index
+def train_classifier_for_person_identification(images, filename_to_save_classifier = None):
+	truth = []
+	data = []
+
+	# Getting data and ground truth:
+	for id_person, image_collection in enumerate(images):
+		for img in image_collection:
+			np_img = cv2.imread(img, 0)
+			dim = np_img.shape[:2]
+			try:
+				encoding = face_recognition.face_encodings(face_recognition.load_image_file(img), model = 'large')
+				data.append(encoding[0])
+			except Exception:
+				encoding = face_recognition.face_encodings(face_recognition.load_image_file(img),
+				                                           [(0, dim[1], dim[0], 0)], model = 'large')
+				data.append(encoding[0])
+			truth.append(id_person)
+	# Creating a classifier and fitting it:
+	classifier = svm.SVC(gamma = 'scale', probability = True)
+	classifier.fit(data, truth)
+
+	os.makedirs(os.path.join(*os.path.split(filename_to_save_classifier)[:-1]), exist_ok = True)
+	if filename_to_save_classifier:
+		with open(filename_to_save_classifier, "wb+") as file:
+			pickle.dump(classifier, file)
+	return classifier
+
+def get_classifier_for_person_identification(filename):
+	with open(filename, "rb+") as file:
+		return pickle.load(file)
+
 
 if __name__ == "__main__":
+
 	images = [
-		'faces/marc_blured.jpg',
-		'faces/old_man.jpg',
-		'faces/old_woman.jpg',
-		'faces/midage_man.jpg',
-		'faces/midage_woman.jpg',
-		'faces/young_man.jpg',
-		'faces/young_woman.jpg',
+		['faces/Eric-Benoit.jpg'],
+		['faces/Marc-Hartley.jpg', 'faces/marc_face.jpg'],
+		['faces/Alexandre-Benoit.jpg'],
+		['faces/Stephane-Perrin.jpg'],
 	]
 	labels = [
+		'Eric',
 		'Marc',
-		'Old Man',
-		'Old Woman',
-		'Midage Man',
-		'Midage Woman',
-		'Young Man',
-		'Young Woman',
+		'Alexandre',
+		'Stéphane',
 	]
 
 	# all_encodings = create_encodings(images, "faces/all_encodings_all_blured.encod", verbose = True)
-	all_encodings = get_encodings("faces/all_encodings.encod")
+	# all_encodings = get_encodings("faces/all_encodings.encod")
+	classifier = train_classifier_for_person_identification(images, "models/svc.classif")
+	# classifier = get_classifier_for_person_identification("models/svc.classif")
 
 	align_to = rs.stream.depth
 	align = rs.align(align_to)
@@ -163,20 +199,25 @@ if __name__ == "__main__":
 					distance = []
 
 					for encoding in face_encodings:
-						# matches = face_recognition.compare_faces(all_encodings, encoding)
+						# Using the classifier
+						found_person_name = labels[classifier.predict([encoding])[0]]
+						proba = 0.0
 
-						if len(face_distances) == 0:  # len(matches):
-							face_distances = face_recognition.face_distance(all_encodings, encoding)
-						else:
-							distances = face_recognition.face_distance(all_encodings, encoding)
-							if distances is not None:
-								face_distances += distances
-								number_of_faces_detection += 1
-						best_match_index = np.argmin(face_distances)
-						# if matches[best_match_index]:
-						found_person_name = labels[best_match_index]
-						proba = face_distances[best_match_index] / face_distances.sum()
-						print(1 - (face_distances / face_distances.sum()))
+						# Using the encoding distance
+						# # matches = face_recognition.compare_faces(all_encodings, encoding)
+						#
+						# if len(face_distances) == 0:  # len(matches):
+						# 	face_distances = face_recognition.face_distance(all_encodings, encoding)
+						# else:
+						# 	distances = face_recognition.face_distance(all_encodings, encoding)
+						# 	if distances is not None:
+						# 		face_distances += distances
+						# 		number_of_faces_detection += 1
+						# best_match_index = np.argmin(face_distances)
+						# # if matches[best_match_index]:
+						# found_person_name = labels[best_match_index]
+						# proba = face_distances[best_match_index] / face_distances.sum()
+						# print(1 - (face_distances / face_distances.sum()))
 
 
 			except Exception as e:

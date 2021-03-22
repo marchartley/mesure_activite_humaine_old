@@ -1,7 +1,4 @@
-opencv-contrib-python==4.5.*
 numpy<=1.18.2
-pyrealsense2:latest
-cubemos.skeletontracking>=2.3.1
 opencv-python~=4.4.0.44
 pip~=21.0.1
 wheel~=0.34.2
@@ -21,3 +18,6 @@ moviepy~=1.0.3
 torch~=1.6.0+cpu
 torchvision~=0.7.0+cpu
 imutils~=0.5.3
+scipy~=1.4.1
+sklearn~=0.0
+scikit-learn~=0.22.1

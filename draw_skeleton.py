@@ -16,16 +16,17 @@ import InfluxDB_connection
 import person_identification
 import threading
 
-def detect_face_async(human, probabilities_good_face, number_of_faces_detection, color_frame, faces_encodings):
-	face_reco = person_identification.recognize_person(human, color_frame, faces_encodings)
+def detect_face_async(human, probabilities_good_face, number_of_faces_detection, color_frame, faces_encodings = None, classifier = None):
+	face_reco = person_identification.recognize_person(human, color_frame, faces_encodings, classifier)
 	if face_reco is None:
 		return
-	face_distance, best_match = face_reco
+	probabilities, best_match = face_reco
+	# face_distance = face_distance[0]
 	if skeleton_id not in probabilities_good_face:
-		probabilities_good_face[skeleton_id] = 1 - face_distance[best_match]
+		probabilities_good_face[skeleton_id] = probabilities#[best_match]
 		number_of_faces_detection[skeleton_id] = 1
 	else:
-		probabilities_good_face[skeleton_id] += 1 - face_distance[best_match]
+		probabilities_good_face[skeleton_id] += probabilities#[best_match]
 		number_of_faces_detection[skeleton_id] += 1
 
 
@@ -40,19 +41,24 @@ if __name__ == "__main__":
 	backSub = cv2.createBackgroundSubtractorMOG2(detectShadows = False, history = 500)
 
 	images = [
-		'faces/marc_blured.jpg',
-		'faces/Eric-Benoit.jpg',
-		'faces/Alexandre-Benoit.jpg',
-		'faces/Stephane-Perrin.jpg',
+		['faces/Eric-Benoit.jpg'],
+		['faces/Marc-Hartley.jpg', 'faces/marc_face.jpg'],
+		['faces/Stephane-Perrin.jpg'],
+		['faces/Alexandre-Benoit.jpg'],
 	]
 	labels = [
-		'Marc',
 		'Eric',
-		'Alexandre',
+		'Marc',
 		'Stéphane',
+		'Alexandre',
 	]
 	# faces_encodings = person_identification.create_encodings(images, "faces/all_encodings.encod", verbose = True)
 	faces_encodings = person_identification.get_encodings("faces/all_encodings.encod")
+	# faces_encodings = None
+	# classifier = person_identification.train_classifier_for_person_identification(images, "models/svc.classif")
+	# classifier = person_identification.get_classifier_for_person_identification("models/svc.classif")
+	classifier = None
+
 	found_persons_names = {}
 	probabilities_good_face = {}
 	faces_locations = []
@@ -60,7 +66,7 @@ if __name__ == "__main__":
 	number_of_faces_detection = {}
 
 	# skeletrack = st.SkeletonTracker(choose_best_module=True, pipeline = pipeline)
-	pipeline = recording.start_playback("recordings/walking_normal.bag", pipeline = pipeline, realtime = True)
+	pipeline = recording.start_playback("recordings/walking_normal.bag", pipeline = pipeline, repeat_playback = True, realtime = True)
 	skeleton_db2D, skeleton_db3D = InfluxDB_connection.ListicClientDB(server_side = False).retrieve_skeleton_keypoints("recordings/walking_normal.bag")
 	joint_confidence = 0.4
 
@@ -70,6 +76,8 @@ if __name__ == "__main__":
 	playing = True
 
 	# automatic_capturer = auto_cap.AutomaticCapture(enable = False, tracker = skeletrack, pipeline = pipeline)
+
+	recognition_thread = None
 
 	while True:
 		if playing:
@@ -102,36 +110,38 @@ if __name__ == "__main__":
 					human.from_json(data2D = skeleton_db2D[skeleton_id], data3D = skeleton_db3D[skeleton_id],
 					                specific_timestamp = current_timestamp/1000)
 
-					if human.check_keypoints(['left_shoulder', 'right_shoulder', 'neck']):
-						left_shoulder = human.get_keypoint3D('left_shoulder')
-						right_shoulder = human.get_keypoint3D('right_shoulder')
+					# if human.check_keypoints(['left_shoulder', 'right_shoulder', 'neck']):
+					# 	left_shoulder = human.get_keypoint3D('left_shoulder')
+					# 	right_shoulder = human.get_keypoint3D('right_shoulder')
+					#
+					# 	left_to_right_shoulders = right_shoulder - left_shoulder
+					# 	neck2D = human.get_keypoint2D('neck')
+					# 	neck3D = human.get_keypoint3D('neck')
+					# 	looking_right = left_to_right_shoulders.dot(neck3D) > 0
 
-						left_to_right_shoulders = right_shoulder - left_shoulder
-						neck2D = human.get_keypoint2D('neck')
-						neck3D = human.get_keypoint3D('neck')
-						looking_right = left_to_right_shoulders.dot(neck3D) > 0
+						# body_orientation = human.get_body_orientation()
+						# if body_orientation is not None:
+						# 	body_orientation = (body_orientation / np.linalg.norm(body_orientation)) * 400
+						# 	body_orientation2D = rs.rs2_project_point_to_pixel(pipeline.get_active_profile().get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics(), (neck3D + body_orientation).tolist())
+						#
+						# 	color_frame = cv2.line(color_frame, (int(neck2D[0]), int(neck2D[1])), (int(body_orientation2D[0]), int(body_orientation2D[1])), (0, 255, 255), 2)
+						# 	if body_orientation[2] > 0:
+						# 		color_frame = cv2.line(color_frame, (int(neck2D[0]), int(neck2D[1] + 5)), (int(body_orientation2D[0]), int(body_orientation2D[1])), (0, 255, 255), 2)
+						# 	else:
+						# 		color_frame = cv2.line(color_frame, (int(neck2D[0]), int(neck2D[1] + 5)), (int(body_orientation2D[0]), int(body_orientation2D[1] + 10)), (0, 255, 255), 2)
+						# 	legs_overlapping = human.legs_overlapping()
 
-						body_orientation = human.get_body_orientation()
-						if body_orientation is not None:
-							body_orientation = (body_orientation / np.linalg.norm(body_orientation)) * 400
-							body_orientation2D = rs.rs2_project_point_to_pixel(pipeline.get_active_profile().get_stream(rs.stream.color).as_video_stream_profile().get_intrinsics(), (neck3D + body_orientation).tolist())
-
-							color_frame = cv2.line(color_frame, (int(neck2D[0]), int(neck2D[1])), (int(body_orientation2D[0]), int(body_orientation2D[1])), (0, 255, 255), 2)
-							if body_orientation[2] > 0:
-								color_frame = cv2.line(color_frame, (int(neck2D[0]), int(neck2D[1] + 5)), (int(body_orientation2D[0]), int(body_orientation2D[1])), (0, 255, 255), 2)
-							else:
-								color_frame = cv2.line(color_frame, (int(neck2D[0]), int(neck2D[1] + 5)), (int(body_orientation2D[0]), int(body_orientation2D[1] + 10)), (0, 255, 255), 2)
-							legs_overlapping = human.legs_overlapping()
-
-					# recognition_thread = threading.Thread(target = detect_face_async, kwargs = {
-					detect_face_async(**{
-						'human': human,
-						'probabilities_good_face': probabilities_good_face,
-						'number_of_faces_detection': number_of_faces_detection,
-						'color_frame': color_frame.copy(),
-						'faces_encodings': faces_encodings
-					})
-					# recognition_thread.run()
+					if recognition_thread is None or not recognition_thread.is_alive():
+						recognition_thread = threading.Thread(target = detect_face_async, kwargs = {
+						# detect_face_async(**{
+							'human': human,
+							'probabilities_good_face': probabilities_good_face,
+							'number_of_faces_detection': number_of_faces_detection,
+							'color_frame': color_frame.copy(),
+							'faces_encodings': faces_encodings,
+							'classifier': classifier,
+						})
+						recognition_thread.start()
 
 					if skeleton_id in probabilities_good_face:
 						found_persons_names[skeleton_id] = labels[np.argmax(probabilities_good_face[skeleton_id])]
@@ -151,7 +161,7 @@ if __name__ == "__main__":
 						font = cv2.FONT_HERSHEY_SIMPLEX
 						font_size = 0.6
 						text_thickness = 2
-						text = found_persons_names[skeleton_id] + f"({round((probabilities_good_face[skeleton_id]/number_of_faces_detection[skeleton_id])*100)}%)"
+						text = found_persons_names[skeleton_id] + f"({round((probabilities_good_face[skeleton_id][np.argmax(probabilities_good_face[skeleton_id])]/number_of_faces_detection[skeleton_id])*100)}%)"
 						text_width, text_height = cv2.getTextSize(text, font, font_size, text_thickness)[0]
 						
 						color_frame = cv2.putText(color_frame,

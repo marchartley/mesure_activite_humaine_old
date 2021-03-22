@@ -226,7 +226,13 @@ For now, we will stay on Cubemos
 
 18/03:
 - Display name above bounding box in "draw_skeleton.py"
+	-> Made the bounding box 3D
 	-> Guessing this demonstrator is finished
+- Maybe try to display tiles on ground (Michael Jackson style)
+- Using multiple pictures for a single person might be a good idea to implement (see 15/03)
+- Need to start to work with the labelling 
+- Need to start to work on the action classifier 
+
 
 
 Next step :
