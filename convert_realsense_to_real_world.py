@@ -203,17 +203,17 @@ if __name__ == "__main__":
 		except:
 			break
 
-		frames = align.process(frames)
+		# frames = align.process(frames)
 		color_frame = np.asanyarray(frames.get_color_frame().get_data()).copy()
-		depth_frame = filters.custom_filter(frames.get_depth_frame())
-		depth_image = np.asanyarray(depth_frame.get_data()).copy()
+		depth_frame = filters.aruco_detection_filters(frames.get_depth_frame())
+		# depth_image = np.asanyarray(depth_frame.get_data()).copy()
 		# depth_image = ((depth_image / depth_image.max()) * 255).astype(int)
 
 		marked_frame, corners, ids = detectMarker(color_frame, aruco_dict)
 
 		depth_image = np.array(rs.colorizer(2).colorize(depth_frame).get_data())
 		if corners:
-			color_frame = draw_cube(color_frame, corners, depth_frame, pipeline)
+			# color_frame = draw_cube(color_frame, corners, depth_frame, pipeline)
 			"""marker_corners = corners[0]
 			(top_left, top_right, bottom_right, bottom_left) = (marker_corners[0][0], marker_corners[0][1], marker_corners[0][2], marker_corners[0][3])
 			aruco_origin_3D = get_3D_coord_from_realsense(top_left.tolist(), depth_frame, pipeline)
@@ -228,7 +228,7 @@ if __name__ == "__main__":
 											new_z_axis_coord = None)
 			real_world_coord = real_world_coord.transpose() * marker_size"""
 
-		cv2.imshow("marker", color_frame)
+		cv2.imshow("marker", marked_frame)
 
 
 		if cv2.waitKey(1) & 0xFF == ord('q'):

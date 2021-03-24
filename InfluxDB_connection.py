@@ -136,3 +136,11 @@ class ListicClientDB():
 				point)))
 
 		return points2D, points3D
+
+	@staticmethod
+	def check_if_body_will_reapear(skeleton_data:dict, current_timestamp:float):
+		max_timestamp = 0
+		for keypoint in skeleton_data:
+			max_timestamp = max(max_timestamp, max([data['time_ms'] for data in skeleton_data[keypoint]]))
+
+		return max_timestamp > current_timestamp

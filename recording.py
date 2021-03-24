@@ -4,6 +4,7 @@ import cv2
 import os
 import time
 import grant_access_server as server
+import realsense_filters as filters
 
 def wait_for_exposure_adaption(pipeline, waiting_frames = 10):
 	for i in range(waiting_frames):
@@ -122,21 +123,29 @@ if __name__ == "__main__":
 	import argparse
 
 	parser = argparse.ArgumentParser(description='Capture a sequence or play a recorded sequence')
-	parser.add_argument('-f', '--filename',	dest='filename', metavar='filename', type=str,
+	play_mode = parser.add_mutually_exclusive_group(required = True)
+	play_mode.add_argument('--just-show', dest = 'just_show',
+	                       help = 'Just display the stream of the camera', action='store_true')
+	play_mode.add_argument('-f', '--filename',	dest='filename', metavar='filename', type=str,
 					help='Filename where you want to store the sequence.\nAvoid saving on removable devices to increase the bitrate',
-					default = "C:/Users/march/Desktop/recordings/walking_slow.bag", required=True)
+					default = "C:/Users/march/Desktop/recordings/walking_slow.bag")
 	parser.add_argument('--record', dest='recording', help='Record and save the sequence', action='store_true')
-	parser.add_argument('--play', dest='play', help='Play the sequence (default)', action='store_true')
+	parser.add_argument('--play', dest='play', help='Play the sequence', action='store_true')
 
 	args = parser.parse_args()
 	filename = args.filename
 	recording = args.recording
+	just_show = args.just_show
 
 	if os.path.pathsep*2 in filename: # path contains "\\"
 		if not server.grant_access_server(): # Create connection with the server
 			print("No connection with the server, maybe turn on the VPN?")
 
-	if recording:
+	if just_show:
+		pipeline = rs.pipeline()
+		pipeline.start()
+		print("Start playing")
+	elif recording:
 		pipeline = start_recording(filename, realtime=True)
 		print("Recording started")
 	else:
@@ -148,6 +157,9 @@ if __name__ == "__main__":
 
 	start_time = time.time()
 
+	align = rs.align(rs.stream.color)
+
+
 	currently_playing = True
 	while True:
 		try:
@@ -157,37 +169,46 @@ if __name__ == "__main__":
 				frames = pipeline.wait_for_frames()
 				frames.keep()
 				frame_count += 1
+			frames = align.process(frames)
 			color_frame = frames.get_color_frame()
 			depth_frame = frames.get_depth_frame()
-			cv2.imshow('depth', cv2.cvtColor(np.asanyarray(color_frame.get_data()).copy(), cv2.COLOR_BGR2RGB))
+			depth_frame = rs.colorizer().colorize(
+				# frames.get_depth_frame()).get_data()
+				filters.aruco_detection_filters(frames.get_depth_frame())).get_data()
+			cv2.imshow('depth', cv2.resize(np.array(depth_frame), (800, 600)))
+			# cv2.imshow('depth', cv2.cvtColor(np.asanyarray(color_frame.get_data()).copy(), cv2.COLOR_BGR2RGB))
 
 			key = cv2.waitKey(1) & 0xFF
 			if key == ord('q') or key == 27:
 				break
 			if key == ord('p'):
-				if currently_playing:
-					if recording:
-						pipeline = pause_recording(pipeline)
+				if not just_show:
+					if currently_playing:
+						if recording:
+							pipeline = pause_recording(pipeline)
+						else:
+							pipeline = pause_playback(pipeline)
 					else:
-						pipeline = pause_playback(pipeline)
-				else:
-					if recording:
-						pipeline = resume_recording(pipeline)
-					else:
-						pipeline = resume_playback(pipeline)
-				currently_playing = not currently_playing
-		except:
+						if recording:
+							pipeline = resume_recording(pipeline)
+						else:
+							pipeline = resume_playback(pipeline)
+					currently_playing = not currently_playing
+		except Exception as e:
+			print(e)
 			break
 
 	sequence_duration = time.time() - start_time
-	print("Recording ended, saving file")
 	start_time = time.time()
-	if recording:
+	if just_show:
+		pipeline.stop()
+	elif recording:
+		print("Recording ended, saving file")
 		pipeline = stop_recording(pipeline)
+		saving_duration = time.time() - start_time
+		print(f"Video duration : {round(sequence_duration, 3)}s")
+		print(f"Saving duration: {round(saving_duration, 3)}s")
 	else:
 		pipeline = stop_playback(pipeline)
-	saving_duration = time.time() - start_time
 
-	print(f"Video duration : {round(sequence_duration, 3)}s")
-	print(f"Saving duration: {round(saving_duration, 3)}s")
 	print(" --- End ---")

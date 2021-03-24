@@ -1,0 +1,27 @@
+[{
+  "total": 1,
+  "generator": "ELAN Multimedia Annotator 6.0",
+  "id": "urn:nl-mpi-tools-elan-eaf:0288c4bc-b204-4d30-9997-233c9d5004fd#collection1",
+  "label": "default",
+  "type": "AnnotationCollection",
+  "@context": "http://www.w3.org/ns/anno.jsonld",
+  "first": {
+    "startIndex": "0",
+    "id": "urn:nl-mpi-tools-elan-eaf:0288c4bc-b204-4d30-9997-233c9d5004fd#collection1-page1",
+    "type": "AnnotationPage",
+    "items": [{
+      "id": "urn:nl-mpi-tools-elan-eaf:0288c4bc-b204-4d30-9997-233c9d5004fd#a1",
+      "type": "Annotation",
+      "body": {
+        "format": "text/plain",
+        "type": "TextualBody",
+        "value": "test"
+      },
+      "@context": "http://www.w3.org/ns/anno.jsonld",
+      "target": {
+        "id": "file:///A:/Uni-Nantes/M2/Présentations/Mon film.mp4#t=0.640,8.430",
+        "type": "video/mp4"
+      }
+    }]
+  }
+}]

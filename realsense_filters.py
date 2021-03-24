@@ -1,6 +1,7 @@
 import pyrealsense2 as rs
 
-previously_filtered_frames = []
+precomputed_filters = {}
+
 
 def apply_filters(depth_frame, filters = None):
 	if filters is None:
@@ -11,21 +12,30 @@ def apply_filters(depth_frame, filters = None):
 			depth_frame = rs_filter.process(depth_frame)
 	return depth_frame
 
+def create_custom_filters(filter_name:str, filters: list) -> list:
+	global precomputed_filters
+	precomputed_filters[filter_name] = filters
 
-def custom_filter(depth_frame, number_of_filters_for_temporal_filter = 3):
-	global previously_filtered_frames
-	if len(previously_filtered_frames) > number_of_filters_for_temporal_filter:
-		previously_filtered_frames = previously_filtered_frames[-number_of_filters_for_temporal_filter:]
-
+def create_aruco_detection_filters() -> list:
 	decimation = None # rs.decimation_filter(magnitude = 3.0)
 	disparity2depth = rs.disparity_transform(True)
-	temporal = rs.temporal_filter(smooth_alpha = 0.760, smooth_delta = 80, persistence_control = 0)
+	temporal = rs.temporal_filter(smooth_alpha = 0.060, smooth_delta = 50, persistence_control = 8)
+	spatial = rs.spatial_filter(smooth_alpha = 0.25, smooth_delta = 1.0, magnitude = 1.0, hole_fill = 0.0)
 	depth2disparity = rs.disparity_transform(False)
-	hole_filling = rs.hole_filling_filter(mode = 1)
+	hole_filling = None # rs.hole_filling_filter(mode = 2)
+	return [decimation, disparity2depth, spatial, temporal, depth2disparity, hole_filling]
 
-	min_index = max(-len(previously_filtered_frames), -number_of_filters_for_temporal_filter)
-	for frame in previously_filtered_frames[min_index:]:
-		apply_filters(frame, [decimation, disparity2depth, temporal, depth2disparity, hole_filling])
+def aruco_detection_filters(depth_frame):
+	global precomputed_filters
+	if 'aruco_detection' not in precomputed_filters:
+		precomputed_filters['aruco_detection'] = create_aruco_detection_filters()
 
-	previously_filtered_frames.append(depth_frame)
-	return apply_filters(depth_frame, [decimation, disparity2depth, temporal, depth2disparity, hole_filling]).as_depth_frame()
+	return apply_filters(depth_frame, precomputed_filters['aruco_detection'])
+
+def custom_filters(depth_frame, filter_name:str):
+	global precomputed_filters
+	if filter_name not in precomputed_filters:
+		precomputed_filters[filter_name] = []
+
+	return apply_filters(depth_frame, precomputed_filters['aruco_detection'])
+

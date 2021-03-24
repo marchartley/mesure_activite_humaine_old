@@ -280,6 +280,28 @@ class HumanSkeleton():
 				face_location = (top, right, bottom, left)
 		return face_location
 
+	def get_bounding_box_2d(self, expand = 1.0):
+		try:
+			min_x = min([self.get_keypoint2D(key)[0] for key in BodyParts if self.get_keypoint2D(key) is not self.POSITION_NOT_FOUND2D])
+			max_x = max([self.get_keypoint2D(key)[0] for key in BodyParts if self.get_keypoint2D(key) is not self.POSITION_NOT_FOUND2D])
+			min_y = min([self.get_keypoint2D(key)[1] for key in BodyParts if self.get_keypoint2D(key) is not self.POSITION_NOT_FOUND2D])
+			max_y = max([self.get_keypoint2D(key)[1] for key in BodyParts if self.get_keypoint2D(key) is not self.POSITION_NOT_FOUND2D])
+
+			w,h = max_x - min_x, max_y - min_y
+			min_x -= w * (expand - 1)
+			max_x += w * (expand - 1)
+			min_y -= h * (expand - 1)
+			max_y += h * (expand - 1)
+
+			return [np.array(coord) for coord in [
+				[min_x, min_y],
+				[min_x, max_y],
+				[max_x, min_y],
+				[max_x, max_y],
+			]]
+		except ValueError:
+			return None
+
 	def get_bounding_box_3d(self):
 		try:
 			min_x = min([self.get_keypoint3D(key)[0] for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D])

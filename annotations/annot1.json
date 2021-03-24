@@ -1,0 +1,101 @@
+[
+  {
+    "total": 4,
+    "generator": "ELAN Multimedia Annotator 6.0",
+    "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#collection1",
+    "label": "default",
+    "type": "AnnotationCollection",
+    "@context": "http://www.w3.org/ns/anno.jsonld",
+    "first": {
+      "startIndex": "0",
+      "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#collection1-page1",
+      "type": "AnnotationPage",
+      "items": [
+        {
+          "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#a1",
+          "type": "Annotation",
+          "body": {
+            "format": "text/plain",
+            "type": "TextualBody",
+            "value": "Talk1"
+          },
+          "@context": "http://www.w3.org/ns/anno.jsonld",
+          "target": {
+            "id": "file:///A:/Uni-Nantes/M2/Présentations/lab3_lombaerde_hartley_lower_quality.mp4#t=1.390,4.890",
+            "type": "video/mp4"
+          }
+        },
+        {
+          "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#a2",
+          "type": "Annotation",
+          "body": {
+            "format": "text/plain",
+            "type": "TextualBody",
+            "value": "Silence"
+          },
+          "@context": "http://www.w3.org/ns/anno.jsonld",
+          "target": {
+            "id": "file:///A:/Uni-Nantes/M2/Présentations/lab3_lombaerde_hartley_lower_quality.mp4#t=5.030,6.640",
+            "type": "video/mp4"
+          }
+        },
+        {
+          "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#a3",
+          "type": "Annotation",
+          "body": {
+            "format": "text/plain",
+            "type": "TextualBody",
+            "value": "Sitting"
+          },
+          "@context": "http://www.w3.org/ns/anno.jsonld",
+          "target": {
+            "id": "file:///A:/Uni-Nantes/M2/Présentations/lab3_lombaerde_hartley_lower_quality.mp4#t=6.920,9.960",
+            "type": "video/mp4"
+          }
+        },
+        {
+          "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#a4",
+          "type": "Annotation",
+          "body": {
+            "format": "text/plain",
+            "type": "TextualBody",
+            "value": "Standing"
+          },
+          "@context": "http://www.w3.org/ns/anno.jsonld",
+          "target": {
+            "id": "file:///A:/Uni-Nantes/M2/Présentations/lab3_lombaerde_hartley_lower_quality.mp4#t=10.145,13.685",
+            "type": "video/mp4"
+          }
+        }
+      ]
+    }
+  },
+  {
+    "total": 1,
+    "generator": "ELAN Multimedia Annotator 6.0",
+    "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#collection2",
+    "label": "Acteur2",
+    "type": "AnnotationCollection",
+    "@context": "http://www.w3.org/ns/anno.jsonld",
+    "first": {
+      "startIndex": "0",
+      "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#collection2-page1",
+      "type": "AnnotationPage",
+      "items": [{
+        "id": "urn:nl-mpi-tools-elan-eaf:1bf47187-1903-4998-bfe1-873c5d8dcf38#a5",
+        "type": "Annotation",
+        "body": {
+          "format": "text/plain",
+          "language": "",
+          "type": "TextualBody",
+          "value": "Receiving microphone"
+        },
+        "@context": "http://www.w3.org/ns/anno.jsonld",
+        "target": {
+          "id": "file:///A:/Uni-Nantes/M2/Présentations/lab3_lombaerde_hartley_lower_quality.mp4#t=5.990,14.390",
+          "type": "video/mp4"
+        }
+      }]
+    }
+  }
+]

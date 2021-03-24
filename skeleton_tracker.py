@@ -467,8 +467,12 @@ class SkeletonTracker:
 		return color_image
 
 
-
-
+	def get_number_of_skeletons(self, color_image=None):
+		if color_image is None:
+			results = self._last_results
+		else:
+			results = self.track_skeletons(color_image, use_cache = True, debug_time = False)
+		return len(results['body'])
 
 	def check_user_presence(self, color_image=None, required_confidence = None, min_number_of_joints_per_person = 0):
 		if color_image is None:

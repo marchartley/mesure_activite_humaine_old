@@ -19,7 +19,7 @@ import datetime
 import glob
 import math
 
-def save_data(bag_filename, client = None, skeletrack = None):
+def save_data(bag_filename, client = None, skeletrack = None, device = 'realsense1'):
 	if client is None:
 		client = InfluxDB_connection.ListicClientDB(server_side = False) # Connect locally if no InfluxDB client is given
 		print("No specific InfluxDB client is given, continuing with local client")
@@ -55,12 +55,13 @@ def save_data(bag_filename, client = None, skeletrack = None):
 		skeletons = skeletrack.track_skeletons(color_frame, debug_time = False)
 
 		if skeletrack.check_user_presence(color_frame):
-			human = human_skeleton.HumanSkeleton()
-			human.from_tracker(skeletrack, 0, depth_frame)
+			for i in range(skeletrack.get_number_of_skeletons()):
+				human = human_skeleton.HumanSkeleton()
+				human.from_tracker(skeletrack, 0, depth_frame)
 
-			coord2D, coord3D = human.to_json()
+				coord2D, coord3D = human.to_json()
 
-			client.insert_skeleton_keypoints(coord2D = coord2D, coord3D = coord3D, timestamp = frames.timestamp, device = 'realsense1', send_immediatly = False)
+				client.insert_skeleton_keypoints(coord2D = coord2D, coord3D = coord3D, skeleton_id = i, timestamp = frames.timestamp, device = device, send_immediatly = False)
 	client.send_to_db()
 	print("Parsing video in ", round(time.time() - start_time, 2), "s")
 
@@ -86,18 +87,6 @@ def retrieve_data(bag_filename, client = None, verbose = False):
 			# number_of_keypoints *= (3 + 2) # 3 coord for 3D + 2 coord for 2D
 		print(f"Fetching {number_of_keypoints} keypoints : {round(end - start, 2)}s [duration = {(end_time - start_time)}s]")
 
-	# start_time = math.inf
-    #
-	# for key in res3D:
-	# 	start_time = min(start_time, res3D[key][0]['time_ms'])
-	# 	Ys = [coord['y'] for coord in res3D[key]]
-	# 	Xs = [(coord['time_ms'] - start_time) for coord in res3D[key]]
-	# 	plt.plot(Xs, Ys, label=key)
-    #
-	# plt.legend()
-	# plt.title("Y-coord of the keypoints for the " + str(bag_filename))
-	# plt.gca().invert_yaxis()
-	# plt.show()
 
 
 if __name__ == "__main__":

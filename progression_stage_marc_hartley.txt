@@ -228,12 +228,49 @@ For now, we will stay on Cubemos
 - Display name above bounding box in "draw_skeleton.py"
 	-> Made the bounding box 3D
 	-> Guessing this demonstrator is finished
+- Guessing the person can be done using a classifier (ex: SVC), but I don't know the accuracy...
 - Maybe try to display tiles on ground (Michael Jackson style)
-- Using multiple pictures for a single person might be a good idea to implement (see 15/03)
+- The Github is created at https://github.com/kemar74/mesure_activite_humaine (private)
 - Need to start to work with the labelling 
-- Need to start to work on the action classifier 
+- Need to start to work on the action classifier (https://www.mendeley.com/reference-manager/reader/a6bd48c9-472e-3773-9a3f-24af5c64b50c/3c663f53-fde5-3f11-5541-3abe9cf1ccf2/)
 
 
+
+-----------------------------------------------------
+
+22/03:
+- We can save annotations from Elan as Json, txt or csv
+- Creating videos that display only one person at the time:
+	-> The filename will be : [original_file][_as_color_video][person_X][.mp4] so we can extract easily the person id 
+	-> The timestamp is stored in the metadata of the file.
+
+- In "save_skeleton_to_server.py", only the first skeleton is saved (l.57-61)
+
+23/03:
+- Changed camera to L515. 
+	-> No filter : too many invalid depth at >2m
+	-> Even with big filters (decimation = 8.0, temporal = 10, spatial, etc...) : too many invald points 
+	-> Distances on shiny objects are random
+	-> My sweat creates invalid depths 
+- Back to D435i.
+	-> With an Aruco 21x21cm placed at 4m : Padding required around borders: 15cm
+		- decimation: magn. 3.0
+		- depth2disparity
+		- spatial:  magn. 5.0 (not revelant)
+					smooth alpha 0.25
+					smooth delta 1.0
+					no hole filling
+		- temporal: smooth alpha 0.06 to 0.10
+					smooth delta 50.0
+					persistancy not revelant 
+		- disparity2depth
+		-> accuracy ~2cm for front aruco. ~10cm for angle of 45°
+	-> With Aruco placed <1m : Padding ~2cm, accuracy ~2mm
+
+
+
+Tomorrow: Continue to work on the multiple video saving (rosbage_to_video.py l.130)
+			Get space coordinates with aruco (again)
 
 Next step :
 	[ ] Finding a good action classifier (https://paperswithcode.com/task/skeleton-based-action-recognition) ?

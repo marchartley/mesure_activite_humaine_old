@@ -1,0 +1,32 @@
+[{
+  "total": 1,
+  "generator": "ELAN Multimedia Annotator 6.0",
+  "id": "urn:nl-mpi-tools-elan-eaf:8ef6f2ad-3634-44a1-8a84-2ace1e7c0602#collection1",
+  "label": "default",
+  "type": "AnnotationCollection",
+  "@context": "http://www.w3.org/ns/anno.jsonld",
+  "first": {
+    "startIndex": "0",
+    "id": "urn:nl-mpi-tools-elan-eaf:8ef6f2ad-3634-44a1-8a84-2ace1e7c0602#collection1-page1",
+    "type": "AnnotationPage",
+    "items": [{
+      "id": "urn:nl-mpi-tools-elan-eaf:8ef6f2ad-3634-44a1-8a84-2ace1e7c0602#a1",
+      "type": "Annotation",
+      "body": {
+        "format": "text/plain",
+        "type": "TextualBody",
+        "value": "Test"
+      },
+      "@context": "http://www.w3.org/ns/anno.jsonld",
+      "target": {
+        "selector": {
+          "conformsTo": "http://www.w3.org/TR/media-frags/",
+          "type": "FragmentSelector",
+          "value": "t=1.310,3.950"
+        },
+        "source": "file:///A:/Uni-Nantes/M2/Présentations/lab3_lombaerde_hartley.mp4",
+        "type": "video/mp4"
+      }
+    }]
+  }
+}]
