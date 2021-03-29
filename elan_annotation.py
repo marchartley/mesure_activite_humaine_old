@@ -4,6 +4,7 @@ import glob
 
 import pandas as pd
 
+import time
 import rosbag_to_videos
 
 error_message_txt = """
@@ -119,8 +120,35 @@ def update_annotations_timestamps(annotations):
 
 def create_elan_file(directory:str, elan_filename:str):
 	files = glob.glob(directory + "/*_as_color_video_person_*")
+	video_file_lines = []
 	for file in files:
-		print(file)
+		video_file_lines.append('<MEDIA_DESCRIPTOR MEDIA_URL="file:///' + os.path.abspath(file) + '" MIME_TYPE="video/mp4"/>')
+
+	print(time.strftime("%Y-%m-%DT%H:%M:%S%z", time.gmtime()))
+
+	file_content = """
+<?xml version="1.0" encoding="UTF-8"?>
+<ANNOTATION_DOCUMENT AUTHOR="LISTIC" DATE="2021-03-24T11:26:58+01:00"
+    FORMAT="3.0" VERSION="3.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://www.mpi.nl/tools/elan/EAFv3.0.xsd">
+    <HEADER MEDIA_FILE="" TIME_UNITS="milliseconds"> """ + "\n".join(video_file_lines) + """
+    
+    <PROPERTY NAME="URN">urn:nl-mpi-tools-elan-eaf:24bb2097-2c69-4d16-99bb-f36fed476ebd</PROPERTY>
+        <PROPERTY NAME="lastUsedAnnotationId">0</PROPERTY>
+    </HEADER>
+    <TIME_ORDER/>
+    <TIER LINGUISTIC_TYPE_REF="default-lt" TIER_ID="default"/>
+    <LINGUISTIC_TYPE GRAPHIC_REFERENCES="false"
+        LINGUISTIC_TYPE_ID="default-lt" TIME_ALIGNABLE="true"/>
+    <CONSTRAINT
+        DESCRIPTION="Time subdivision of parent annotation's time interval, no time gaps allowed within this interval" STEREOTYPE="Time_Subdivision"/>
+    <CONSTRAINT
+        DESCRIPTION="Symbolic subdivision of a parent annotation. Annotations refering to the same parent are ordered" STEREOTYPE="Symbolic_Subdivision"/>
+    <CONSTRAINT DESCRIPTION="1-1 association with a parent annotation" STEREOTYPE="Symbolic_Association"/>
+    <CONSTRAINT
+        DESCRIPTION="Time alignable annotations within the parent annotation's time interval, gaps are allowed" STEREOTYPE="Included_In"/>
+</ANNOTATION_DOCUMENT>
+"""
 
 if __name__ == "__main__":
 	# print(read_annotations_as_json("annotations/annot3.json"))

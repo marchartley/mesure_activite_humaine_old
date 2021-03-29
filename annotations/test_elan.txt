@@ -1,0 +1,5 @@
+"#file:///A:/Code Perso/NVIDIA_realsense/test_project/recordings/walking_normal_as_color_video.mp4 -- offset: 0, duration: 00:00:21.000 / 21.000 / 21000, ms per sample: 100.0"
+"#file:///A:/Code Perso/NVIDIA_realsense/test_project/recordings/walking_slow_as_color_video.mp4 -- offset: 0, duration: 00:01:18.300 / 78.300 / 78300, ms per sample: 100.0"
+Temps de départ - hh:mm:ss.ms	Temps de départ - ss.msec	Temps de départ - msec	temps de fin - hh:mm:ss.ms	temps de fin - ss.msec	temps de fin - msec	Durée - hh:mm:ss.ms	Durée - ss.msec	Durée - msec	default	
+00:00:01.450	1.45	1450	00:00:03.620	3.62	3620	00:00:02.170	2.17	2170	Walk slowly
+00:00:05.110	5.11	5110	00:00:06.990	6.99	6990	00:00:01.880	1.88	1880	Walk fast
