@@ -267,7 +267,10 @@ For now, we will stay on Cubemos
 		-> accuracy ~2cm for front aruco. ~10cm for angle of 45°
 	-> With Aruco placed <1m : Padding ~2cm, accuracy ~2mm
 
-
+24/03:
+- We can now save one video per person on a ros bag in rosbage_to_video.py 
+- Got the Ubuntu computer (pwd: admin666). Installing all requirements
+- Installing PyCharm on Ubuntu.
 
 Tomorrow: Continue to work on the multiple video saving (rosbage_to_video.py l.130)
 			Get space coordinates with aruco (again)
