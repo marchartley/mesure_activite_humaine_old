@@ -37,5 +37,5 @@ def custom_filters(depth_frame, filter_name:str):
 	if filter_name not in precomputed_filters:
 		precomputed_filters[filter_name] = []
 
-	return apply_filters(depth_frame, precomputed_filters['aruco_detection'])
+	return apply_filters(depth_frame, precomputed_filters[filter_name])
 

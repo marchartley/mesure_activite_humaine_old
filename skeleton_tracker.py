@@ -7,13 +7,18 @@ skeleton_tracking_modules = []
 try:
 	import openpose_python as op
 	skeleton_tracking_modules.append('openpose')
-except:
+except Exception as e:
+	# raise e
 	pass
 
 try:
+	import os
+	if 'LD_LIBRARY_PATH' not in os.environ:
+		os.environ['LD_LIBRARY_PATH'] = '/usr/lib64/'
 	from skeletontracker import skeletontracker
 	skeleton_tracking_modules.append('cubemos')
 except Exception as e:
+	# raise e
 	pass
 
 try:
@@ -26,21 +31,19 @@ try:
 		import torch2trt
 		import torchvision.transforms as transforms
 		import PIL.Image
+		skeleton_tracking_modules.append('trt_pose')
 	except Exception as e:
 		print("Importation of TRT-pose was ok, but there is additionnal packages raising errors :", e)
-	skeleton_tracking_modules.append('trt_pose')
-except:
+except Exception as e:
+	# raise e
 	pass
 
-import copy
-import time
-import cv2
 import os
-import numpy as np
-
 import threading
-import multiprocessing
+import time
 
+import cv2
+import numpy as np
 
 available_modules_importance = [module for module in modules_importance if module[0] in skeleton_tracking_modules]
 unavailable_modules_importance = [module for module in modules_importance if module[0] not in skeleton_tracking_modules]
@@ -179,11 +182,11 @@ class SkeletonTracker:
 			tracker_params["face"] = self.track_face
 			tracker_params["hand"] = self.track_hands
 			tracker_params["logging_level"] = 255
-			tracker_params["model_pose"] = "BODY_25"
+			# tracker_params["model_pose"] = "BODY_25"
 			# tracker_params["model_pose"] = "COCO"
-			# tracker_params["model_pose"] = "MPI"
+			tracker_params["model_pose"] = "MPI"
 			# tracker_params["model_pose"] = "MPI_4_layers"
-			# tracker_params["net_resolution"] = "160x160"
+			tracker_params["net_resolution"] = "32x32"
 			tracker_params["disable_multi_thread"] = True
 			if verbose:
 				print("Loading model")
@@ -472,6 +475,8 @@ class SkeletonTracker:
 			results = self._last_results
 		else:
 			results = self.track_skeletons(color_image, use_cache = True, debug_time = False)
+		print(results)
+		exit()
 		return len(results['body'])
 
 	def check_user_presence(self, color_image=None, required_confidence = None, min_number_of_joints_per_person = 0):

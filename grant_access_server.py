@@ -1,9 +1,9 @@
 import os
-import pywintypes
-import win32wnet
 
 accessed_servers = {}
 def grant_access_server(hostname = None, share_folder_name = None, user = None, password = None, verbose = False):
+	import pywintypes
+	import win32wnet
 	if user is None:
 		user = 'mhartley'
 	if password is None:

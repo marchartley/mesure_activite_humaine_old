@@ -181,6 +181,8 @@ For now, we will stay on Cubemos
 - The Cubemos API key can be used infinately if I set the date of the PC 
 	-> between 11/02/2021 and 11/03/2021 : 5077476e-6aad-11eb-b9b0-e6bc47cf872e (marc.hartley@hotmail.com)
 	-> between 11/03/2021 and 11/04/2021 : 17e8e080-8243-11eb-922d-26771f1e289c (marc.hartley@etu.univ-nantes.fr)
+	
+	-> between 25/03/2021 qnd 25/04/2021 on the UBUNTU : d7cbf60e-8d5f-11eb-bf29-9e88dd5d5d5b marc.hartley@univ-smb.fr)
 	(Just run "C:\Program Files\Cubemos\SkeletonTracking\scripts\post_installation.bat" and copy paste the key corresponding to the date)
 	
 - "Body orientation" is the mean calculated from the right shoulder, left shoulder, right hip, left hip
@@ -271,6 +273,19 @@ For now, we will stay on Cubemos
 - We can now save one video per person on a ros bag in rosbage_to_video.py 
 - Got the Ubuntu computer (pwd: admin666). Installing all requirements
 - Installing PyCharm on Ubuntu.
+
+-------------------------------------------------------
+
+29/03:
+- Tried to install project on Ubuntu 
+	-> But Cubemos is not working
+	-> GPU < 1Go so impossible to run OpenPose
+	-> Started having difficulties with RealSense when I stopped trying 
+	
+30/03:
+- Working back with L515 :
+	-> Just need to work with absence of data for certain coordinates
+- Working on the Aruco Cube 
 
 Tomorrow: Continue to work on the multiple video saving (rosbage_to_video.py l.130)
 			Get space coordinates with aruco (again)

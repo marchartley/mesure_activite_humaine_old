@@ -6,22 +6,27 @@ import time
 import grant_access_server as server
 import realsense_filters as filters
 
+
 def wait_for_exposure_adaption(pipeline, waiting_frames = 10):
 	for i in range(waiting_frames):
 		pipeline.wait_for_frames()
 	return pipeline
 
-def change_FPS(config, desired_fps): ## Doesn't work!!
+
+def change_FPS(config, desired_fps):  ## Doesn't work!!
 	config.disable_all_streams()
 	config.enable_stream(rs.stream.depth, 0, rs.format.z16, desired_fps)
 	config.enable_stream(rs.stream.color, 0, rs.format.rgb8, desired_fps)
 	return config
 
+
 def device_connected():
 	# print("Device found" if len(rs.context().devices) > 0 else "No device")
 	return len(rs.context().devices) > 0
 
-def start_recording(filename : str, pipeline = None, repeat_playback = None, realtime = None): # Realtime and repeat_playback are not used, just for consistency with "start_playback"
+
+def start_recording(filename: str, pipeline = None, repeat_playback = None,
+                    realtime = None):  # Realtime and repeat_playback are not used, just for consistency with "start_playback"
 	os.makedirs(os.path.join(*os.path.split(filename)[:-1]), exist_ok = True)
 	if pipeline:
 		device = pipeline.get_active_profile().get_device()
@@ -39,8 +44,8 @@ def start_recording(filename : str, pipeline = None, repeat_playback = None, rea
 		config.enable_record_to_file(filename)
 		pipeline.start(config)
 
-
 	return pipeline
+
 
 def pause_recording(pipeline):
 	# if device_connected():
@@ -48,11 +53,13 @@ def pause_recording(pipeline):
 	device.as_recorder().pause()
 	return pipeline
 
+
 def resume_recording(pipeline):
 	# if device_connected():
 	device = pipeline.get_active_profile().get_device()
 	device.as_recorder().resume()
 	return pipeline
+
 
 def stop_recording(pipeline):
 	pipeline.stop()
@@ -62,7 +69,7 @@ def stop_recording(pipeline):
 	return pipeline
 
 
-def start_playback(filename : str, pipeline = None, repeat_playback = False, realtime = False):
+def start_playback(filename: str, pipeline = None, repeat_playback = False, realtime = False):
 	if pipeline:
 		has_to_stop_device = False
 		try:
@@ -89,7 +96,6 @@ def start_playback(filename : str, pipeline = None, repeat_playback = False, rea
 	if not realtime:
 		pipeline.get_active_profile().get_device().as_playback().set_real_time(realtime)
 
-
 	return pipeline
 
 
@@ -99,11 +105,13 @@ def pause_playback(pipeline):
 	device.as_playback().pause()
 	return pipeline
 
+
 def resume_playback(pipeline):
 	# if device_connected():
 	device = pipeline.get_active_profile().get_device()
 	device.as_playback().resume()
 	return pipeline
+
 
 def stop_playback(pipeline):
 	pipeline.stop()
@@ -113,8 +121,6 @@ def stop_playback(pipeline):
 	return pipeline
 
 
-
-
 if __name__ == "__main__":
 
 	# Example of usage: python recording.py --play -f C:/Users/march/Desktop/recordings/walking_slow.bag
@@ -122,43 +128,48 @@ if __name__ == "__main__":
 	# python recording.py --play -f \\lst-data2.local.univ-savoie.fr\iot\data\realsense_d435i_raw\second_sequence_on_the_server.bag
 	import argparse
 
-	parser = argparse.ArgumentParser(description='Capture a sequence or play a recorded sequence')
+	parser = argparse.ArgumentParser(description = 'Capture a sequence or play a recorded sequence')
 	play_mode = parser.add_mutually_exclusive_group(required = True)
 	play_mode.add_argument('--just-show', dest = 'just_show',
-	                       help = 'Just display the stream of the camera', action='store_true')
-	play_mode.add_argument('-f', '--filename',	dest='filename', metavar='filename', type=str,
-					help='Filename where you want to store the sequence.\nAvoid saving on removable devices to increase the bitrate',
-					default = "C:/Users/march/Desktop/recordings/walking_slow.bag")
-	parser.add_argument('--record', dest='recording', help='Record and save the sequence', action='store_true')
-	parser.add_argument('--play', dest='play', help='Play the sequence', action='store_true')
+	                       help = 'Just display the stream of the camera', action = 'store_true')
+	play_mode.add_argument('-f', '--filename', dest = 'filename', metavar = 'filename', type = str,
+	                       help = 'Filename where you want to store/play the sequence.' +
+	                              '\nAvoid saving on removable devices to increase the bitrate')
+	play_mode.add_argument('-d', '--directory', dest = 'directory', metavar = 'directory', type = str,
+	                       help = 'Directory where you want to save the sequence. File name will be timestamped.' +
+	                              '\nAvoid saving on removable devices to increase the bitrate')
+	parser.add_argument('--record', dest = 'recording', help = 'Record and save the sequence', action = 'store_true')
+	parser.add_argument('--play', dest = 'play', help = 'Play the sequence', action = 'store_true')
 
 	args = parser.parse_args()
 	filename = args.filename
+	directory = args.directory
 	recording = args.recording
 	just_show = args.just_show
 
-	if os.path.pathsep*2 in filename: # path contains "\\"
-		if not server.grant_access_server(): # Create connection with the server
+	if os.path.pathsep * 2 in filename:  # path contains "\\"
+		if not server.grant_access_server():  # Create connection with the server
 			print("No connection with the server, maybe turn on the VPN?")
+
+	if filename is None and directory is not None:
+		filename = directory + "/" + time.strftime("%Y-%m-%d_%H_%M_%S_")
 
 	if just_show:
 		pipeline = rs.pipeline()
 		pipeline.start()
 		print("Start playing")
 	elif recording:
-		pipeline = start_recording(filename, realtime=True)
+		pipeline = start_recording(filename, realtime = True)
 		print("Recording started")
 	else:
-		pipeline = start_playback(filename, realtime=True)
+		pipeline = start_playback(filename, realtime = True)
 		print("Playback started")
-
 
 	frame_count = 0
 
 	start_time = time.time()
 
 	align = rs.align(rs.stream.color)
-
 
 	currently_playing = True
 	while True:
@@ -173,8 +184,8 @@ if __name__ == "__main__":
 			color_frame = frames.get_color_frame()
 			depth_frame = frames.get_depth_frame()
 			depth_frame = rs.colorizer().colorize(
-				# frames.get_depth_frame()).get_data()
-				filters.aruco_detection_filters(frames.get_depth_frame())).get_data()
+				frames.get_depth_frame()).get_data()
+				# filters.aruco_detection_filters(frames.get_depth_frame())).get_data()
 			cv2.imshow('depth', cv2.resize(np.array(depth_frame), (800, 600)))
 			# cv2.imshow('depth', cv2.cvtColor(np.asanyarray(color_frame.get_data()).copy(), cv2.COLOR_BGR2RGB))
 

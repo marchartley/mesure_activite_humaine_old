@@ -65,9 +65,9 @@ if __name__ == "__main__":
 	faces_distances = np.array([])
 	number_of_faces_detection = {}
 
-	# skeletrack = st.SkeletonTracker(choose_best_module=True, pipeline = pipeline)
+	skeletrack = st.SkeletonTracker(choose_best_module=True, pipeline = pipeline)
 	pipeline = recording.start_playback("recordings/walking_normal.bag", pipeline = pipeline, repeat_playback = True, realtime = True)
-	skeleton_db2D, skeleton_db3D = InfluxDB_connection.ListicClientDB(server_side = False).retrieve_skeleton_keypoints("recordings/walking_normal.bag")
+	# skeleton_db2D, skeleton_db3D = InfluxDB_connection.ListicClientDB(server_side = False).retrieve_skeleton_keypoints("recordings/walking_normal.bag")
 	joint_confidence = 0.4
 
 	start_time = time.time()
@@ -104,11 +104,13 @@ if __name__ == "__main__":
 			# depth_data = np.asanyarray(depth_frame.get_data())
 
 			try:
-				for skeleton_id in range(len(skeleton_db2D)):
+				number_of_persons = skeletrack.get_number_of_skeletons(original)
+				# number_of_persons = len(skeleton_db2D)
+				for skeleton_id in range(number_of_persons):
 					human = human_skeleton.HumanSkeleton()
-					# human.from_tracker(skeletrack, skeleton_id, depth_frame)
-					human.from_json(data2D = skeleton_db2D[skeleton_id], data3D = skeleton_db3D[skeleton_id],
-					                specific_timestamp = current_timestamp/1000)
+					human.from_tracker(skeletrack, skeleton_id, depth_frame)
+					# human.from_json(data2D = skeleton_db2D[skeleton_id], data3D = skeleton_db3D[skeleton_id],
+					#                 specific_timestamp = current_timestamp/1000)
 
 					# if human.check_keypoints(['left_shoulder', 'right_shoulder', 'neck']):
 					# 	left_shoulder = human.get_keypoint3D('left_shoulder')

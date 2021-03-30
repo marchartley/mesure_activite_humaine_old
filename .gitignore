@@ -2,3 +2,6 @@
 /test_env/
 /openpose/
 /ignored/
+*.so
+*.so.*
+*.cmake
