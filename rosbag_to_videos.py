@@ -188,8 +188,8 @@ def create_video_for_one_person(db_client:InfluxDB_connection.ListicClientDB, or
 					crop_min_y = int(crop_min_y)
 					crop_max_y = int(crop_max_y)
 
-					cropped_color_frame = color_frame[crop_min_y:crop_max_y, crop_min_x:crop_max_x]
-					cropped_depth_frame = depth_frame[crop_min_y:crop_max_y, crop_min_x:crop_max_x]
+					cropped_color_frame = color_frame # [crop_min_y:crop_max_y, crop_min_x:crop_max_x]
+					cropped_depth_frame = depth_frame # [crop_min_y:crop_max_y, crop_min_x:crop_max_x]
 					cropped_color_frame = cv2.resize(cropped_color_frame, final_video_size)
 					cropped_depth_frame = cv2.resize(cropped_depth_frame, final_video_size)
 					frames_color.append(cropped_color_frame)
@@ -250,6 +250,9 @@ if __name__ == "__main__":
 	parser.add_argument('--depth-suffix', '-ds', dest = 'depth_suffix',
 	                    help = 'Add a suffix at the end of the file name for the depth version of the video',
 	                    type = str, default = '_as_depth_video')
+	parser.add_argument('--one-video-per-person', dest='one_vid_per_pers',
+	                    help = 'Create one video for each individual person detected in the video',
+	                    action = 'store_true')
 	args = parser.parse_args()
 	filename = args.filename
 	directory = args.directory
@@ -259,6 +262,7 @@ if __name__ == "__main__":
 	depth_suffix = args.depth_suffix
 	color_suffix = args.color_suffix
 	depth_output_dir = args.depth_output_dir
+	one_vid_per_pers = args.one_vid_per_pers
 	if depth_output_dir is None:
 		if directory is not None:
 			depth_output_dir = directory
@@ -296,12 +300,11 @@ if __name__ == "__main__":
 		else:
 			depth_filename = os.path.join(depth_output_dir, original_filename + depth_suffix + ".mp4")
 
-		# Transform the rosbag into a video, without looking for skeletons
-		# create_video_from_rosbag(file_name, color_filename, depth_filename, target_fps = target_fps, depth_colorization = 0)
+		if one_vid_per_pers:
+			# Transform into multiple videos, each one following one different person
+			create_video_for_all_persons(db_client, file_name, color_filename, depth_filename, target_fps = target_fps, depth_colorization = 0)
+		else:
+			# Transform the rosbag into a video, without looking for skeletons
+			create_video_from_rosbag(file_name, color_filename, depth_filename, target_fps = target_fps, depth_colorization = 0)
 
-		# Transform into a video and crop to follow one specific person
-		# create_video_for_one_person(db_client, file_name, 0, color_filename, depth_filename, target_fps = target_fps, depth_colorization = 0)
-
-		# Transform into multiple videos, each one following one different person
-		create_video_for_all_persons(db_client, file_name, color_filename, depth_filename, target_fps = target_fps, depth_colorization = 0)
 	print("100%")

@@ -285,10 +285,17 @@ For now, we will stay on Cubemos
 30/03:
 - Working back with L515 :
 	-> Just need to work with absence of data for certain coordinates
-- Working on the Aruco Cube 
+- Working on the Aruco Cube -> Done (?)
 
-Tomorrow: Continue to work on the multiple video saving (rosbage_to_video.py l.130)
-			Get space coordinates with aruco (again)
+- Cite dataset1.zip : Human Activity Recognition Process Using 3-D Posture Data. S. Gaglio, G. Lo Re, M. Morana. In IEEE Transactions on Human-Machine Systems. 2014 doi: 10.1109/THMS.2014.2377111
+- Cite dataset2.zip : L. Xia, C. Chen and J. K. Aggarwal, "View invariant human action recognition using histograms of 3D joints," 2012 IEEE Computer Society Conference on Computer Vision and Pattern Recognition Workshops, Providence, RI, USA, 2012, pp. 20-27, doi: 10.1109/CVPRW.2012.6239233.
+
+31/03:
+- Made the annotator that transforms markers in Json file.
+	-> Just need to attach the top buttons/keys (1-9) to the creation of markers
+
+
+Tomorrow: Continue to work on the multiple video saving (rosbag_to_video.py l.130)
 
 Next step :
 	[ ] Finding a good action classifier (https://paperswithcode.com/task/skeleton-based-action-recognition) ?

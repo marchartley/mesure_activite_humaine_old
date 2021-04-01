@@ -257,6 +257,7 @@ class SkeletonTracker:
 
 	def track_skeletons(self, image, use_cache = True, debug_time = False):
 		color_image = image
+		results = None
 		if self.tracker is None:
 			raise Exception("The skeleton tracker is not configured properly. See previous warnings.")
 
@@ -475,8 +476,7 @@ class SkeletonTracker:
 			results = self._last_results
 		else:
 			results = self.track_skeletons(color_image, use_cache = True, debug_time = False)
-		print(results)
-		exit()
+
 		return len(results['body'])
 
 	def check_user_presence(self, color_image=None, required_confidence = None, min_number_of_joints_per_person = 0):

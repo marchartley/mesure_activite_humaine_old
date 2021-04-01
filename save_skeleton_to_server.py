@@ -57,7 +57,7 @@ def save_data(bag_filename, client = None, skeletrack = None, device = 'realsens
 		if skeletrack.check_user_presence(color_frame):
 			for i in range(skeletrack.get_number_of_skeletons()):
 				human = human_skeleton.HumanSkeleton()
-				human.from_tracker(skeletrack, 0, depth_frame)
+				human.from_tracker(skeletrack, i, depth_frame)
 
 				coord2D, coord3D = human.to_json()
 
