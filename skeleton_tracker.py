@@ -406,7 +406,7 @@ class SkeletonTracker:
 		if self.module == 'cubemos':
 			keypoint_enum = cubemos_keypoints
 		elif self.module == 'openpose':
-			keypoint_enum == openpose_keypoints
+			keypoint_enum = openpose_keypoints
 		elif self.module == 'trt':
 			keypoint_enum = trt_keypoints
 		try:

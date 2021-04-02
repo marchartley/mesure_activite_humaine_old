@@ -12,8 +12,6 @@ from PIL import Image, ImageTk
 
 import rosbag_to_videos as rtv
 
-# from ttkwidgets import AutoHideScrollbar
-
 actions = ['walk', 'stand', 'sit', 'fall']
 
 
@@ -93,16 +91,9 @@ class AnnotationEditor(tk.Tk):
 		self.video_has_been_changed_manually = False
 
 		for i, action in enumerate(actions):
-			self.bind_all(str(i+1), lambda evt, index=i: self.action_buttons[index].config(relief = tk.SUNKEN
+			self.bind(str(i+1), lambda evt, index=i: self.action_buttons[index].config(relief = tk.SUNKEN
 			                              if self.action_buttons[index].cget('relief') == tk.RAISED else tk.RAISED))
 
-		self.import_video_command([
-			'A:/Code Perso/NVIDIA_realsense/test_project/recordings/walking_normal_as_color_video_person_0.mp4',
-			'A:/Code Perso/NVIDIA_realsense/test_project/recordings/walk_around_aruco_as_color_video.mp4',
-			'A:/Code Perso/NVIDIA_realsense/test_project/recordings/walking_slow_as_color_video.mp4',
-			'A:/Code Perso/NVIDIA_realsense/test_project/recordings/walking_short_as_color_video.mp4',
-			'A:/Code Perso/NVIDIA_realsense/test_project/recordings/walking_normal_as_color_video.mp4'
-		])
 
 	def set_video(self, filename, previous_video_id = -1):
 		if previous_video_id != -1:
@@ -140,6 +131,7 @@ class AnnotationEditor(tk.Tk):
 				self.list_of_filenames.append(file)
 				self.listbox_of_filenames.insert('end', file)
 		self.listbox_of_filenames.selection_set(0)
+		self.color_processed_video_filenames()
 
 	def create_annotation_json(self, annotation_filename = "video_annotation.json", data = None):
 		if data is None:
@@ -155,6 +147,7 @@ class AnnotationEditor(tk.Tk):
 		annotations = self.get_annotation_json(annotation_filename)
 		annotations[video_filename] = data
 		self.create_annotation_json(annotation_filename, annotations)
+		self.color_processed_video_filenames()
 
 	def get_annotation_json(self, annotation_filename = "video_annotation.json", video_filename = None):
 		if not os.path.exists(annotation_filename):
@@ -171,6 +164,14 @@ class AnnotationEditor(tk.Tk):
 		else:
 			return data
 
+	def color_processed_video_filenames(self):
+		data = self.get_annotation_json(self.annotation_filename)
+		for i, filename in enumerate(self.list_of_filenames):
+			if filename in data and len(data[filename]) > 0:
+				self.listbox_of_filenames.itemconfigure(i, bg = "light green")
+			else:
+				self.listbox_of_filenames.itemconfigure(i, bg = "salmon")
+
 	def wait_before_playing_next_video(self):
 		self.video_has_been_changed_manually = False
 		if self.current_file_index < len(self.list_of_filenames) - 1:
@@ -179,10 +180,12 @@ class AnnotationEditor(tk.Tk):
 
 	def play_next_video(self):
 		if not self.video_has_been_changed_manually: # If the user didn't change video during the timer
-			self.current_file_index += 1
+			previous_index = self.current_file_index
+			if self.current_file_index < len(self.list_of_filenames) - 1:
+				self.current_file_index += 1
 			self.listbox_of_filenames.select_clear(0, len(self.list_of_filenames))
 			self.listbox_of_filenames.selection_set(self.current_file_index)
-			self.set_video(self.list_of_filenames[self.current_file_index], self.current_file_index - 1)
+			self.set_video(self.list_of_filenames[self.current_file_index], previous_index)
 			self.video_canvas.play()
 
 
@@ -223,7 +226,7 @@ class VideoPlayer(tk.Canvas):
 
 		self.callbacks = {}
 
-		self.video_timestamp = 0
+		self.video_timestamp = None
 
 		self.bind_all('<Key-Left>', self.backwards)
 		self.bind_all('<Key-Right>', self.forward)
@@ -231,7 +234,7 @@ class VideoPlayer(tk.Canvas):
 		self.current_action_markers = {}
 		for i, action in enumerate(actions):
 			self.current_action_markers[action] = -1
-			self.bind_all('<KP_' + str(i) + '>', lambda evt: self.begin_or_end_action_marker(evt, action))
+			self.bind_all(str(i+1), lambda evt, act=action: self.begin_or_end_action_marker(evt, act))
 
 	def backwards(self, event, time_delta = 2.0):
 		new_time = max(0, int(self.current_frame - time_delta * self.fps))
@@ -331,7 +334,6 @@ class VideoPlayer(tk.Canvas):
 					break
 
 	def begin_or_end_action_marker(self, event, action_name):
-		print("Pressed for " + action_name)
 		if self.current_action_markers[action_name] == -1: # Begin this action
 			self.current_action_markers[action_name] = self.current_frame
 		else: # Marker already started
@@ -339,8 +341,8 @@ class VideoPlayer(tk.Canvas):
 			end_time = self.current_frame / self.fps
 			self.associated_slider.create_marker(action_name, start_time, end_time)
 			self.save_annotations()
-	# if self.associated_slider.current_iid:
-	# 	self.associated_slider.delete_marker(self.associated_slider.current_iid)
+			self.current_action_markers[action_name] = -1
+
 
 	def _left_click_released_on_timeline(self, event):
 		if self.associated_slider.current_iid is not None:
@@ -373,8 +375,8 @@ class VideoPlayer(tk.Canvas):
 				self.annotations[marker['category']] = []
 			self.annotations[marker['category']].append({'from': marker['start'],
 			                                             'to': marker['finish'],
-			                                             'timestamp_start': marker['start'] + timestamp_offset,
-			                                             'timestamp_end': marker['end'] + timestamp_offset })
+			                                             'timestamp_start': marker['start'] + (timestamp_offset * 1000),
+			                                             'timestamp_end': marker['finish'] + (timestamp_offset * 1000) })
 
 	def load_annotations(self, annotations):
 		self.annotations = annotations

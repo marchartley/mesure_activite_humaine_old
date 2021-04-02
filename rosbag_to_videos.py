@@ -50,8 +50,8 @@ def get_metadata_from_video(filename:str, key:str):
 
 def get_timestamps_from_video(filename:str):
 	file = mutagen.mp4.MP4(filename)
-	start = float(file['start'])
-	end = float(file['end'])
+	start = float(file['from'][0])
+	end = float(file['endt'][0])
 	return (start, end)
 
 def create_video_from_rosbag(original_filename:str, color_video_destination:str, depth_video_destination:str = None, target_fps = -1, depth_colorization = 0):
@@ -86,10 +86,10 @@ def create_video_from_rosbag(original_filename:str, color_video_destination:str,
 	pipeline = recording.stop_playback(pipeline)
 
 	if color_video_destination is not None:
-		save_video(frames_color, fps_color, target_fps, color_video_destination, {'start': start_timestamp, 'end': end_timestamp})
+		save_video(frames_color, fps_color, target_fps, color_video_destination, {'from': start_timestamp, 'endt': end_timestamp})
 
 	if depth_video_destination is not None:
-		save_video(frames_depth, fps_depth, target_fps, depth_video_destination, {'start': start_timestamp, 'end': end_timestamp})
+		save_video(frames_depth, fps_depth, target_fps, depth_video_destination, {'from': start_timestamp, 'endt': end_timestamp})
 
 def create_video_for_all_persons(db_client:InfluxDB_connection.ListicClientDB, original_filename:str, color_video_destination:str, depth_video_destination:str = None, target_fps = -1, depth_colorization = 0):
 	skeleton_db2D, skeleton_db3D = db_client.retrieve_skeleton_keypoints(original_filename)
@@ -214,10 +214,10 @@ def create_video_for_one_person(db_client:InfluxDB_connection.ListicClientDB, or
 	pipeline = recording.stop_playback(pipeline)
 
 	if color_video_destination is not None:
-		save_video(frames_color, fps_color, target_fps, color_video_destination, {'start': start_timestamp, 'end': end_timestamp})
+		save_video(frames_color, fps_color, target_fps, color_video_destination, {'from': start_timestamp, 'endt': end_timestamp})
 
 	if depth_video_destination is not None:
-		save_video(frames_depth, fps_depth, target_fps, depth_video_destination, {'start': start_timestamp, 'end': end_timestamp})
+		save_video(frames_depth, fps_depth, target_fps, depth_video_destination, {'from': start_timestamp, 'endt': end_timestamp})
 
 
 

@@ -293,9 +293,12 @@ For now, we will stay on Cubemos
 31/03:
 - Made the annotator that transforms markers in Json file.
 	-> Just need to attach the top buttons/keys (1-9) to the creation of markers
+	
+01/04:
+- Annotator takes into account the key press to create markers on the run.
+	-> Not completely... Don't know why the bindings doesn't work well
 
 
-Tomorrow: Continue to work on the multiple video saving (rosbag_to_video.py l.130)
 
 Next step :
 	[ ] Finding a good action classifier (https://paperswithcode.com/task/skeleton-based-action-recognition) ?
