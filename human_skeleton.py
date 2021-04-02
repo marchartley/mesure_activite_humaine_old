@@ -66,7 +66,8 @@ class HumanSkeleton():
 
 	def from_tracker(self, tracker, id, depth_map = None):
 		for key in self.body_parts_2D:
-			if np.any(tracker.get_keypoint(key, person_id=id) == -1):
+			if np.any(tracker.get_keypoint(key, person_id=id) == -1) or np.all(tracker.get_keypoint(key, person_id=id) == 0) or \
+					np.all(tracker.get_keypoint3D(key, depth_map, person_id=id) == 0):
 				self.body_parts_2D[key] = np.array([None, None])
 				if tracker.is_3D_available and depth_map is not None:
 					self.body_parts_3D[key] = np.array([None, None, None])
@@ -111,8 +112,8 @@ class HumanSkeleton():
 
 
 	def to_json(self):
-		coord2D = {key.name: self.get_keypoint2D(key) for key in BodyParts}
-		coord3D = {key.name: self.get_keypoint3D(key) for key in BodyParts}
+		coord2D = {key.name: self.get_keypoint2D(key) for key in BodyParts if self.get_keypoint2D(key) is not self.POSITION_NOT_FOUND2D}
+		coord3D = {key.name: self.get_keypoint3D(key) for key in BodyParts if self.get_keypoint3D(key) is not self.POSITION_NOT_FOUND3D}
 		return coord2D, coord3D
 
 

@@ -91,8 +91,7 @@ class ListicClientDB():
 	def retrieve_skeleton_keypoints(self, sequence_filename = None, start_time = None, end_time = None):
 		if start_time is None and end_time is None:
 			if sequence_filename is None:
-				raise Exception(
-					"Cannot retrieve skeleton keypoints because no filename has been given, nor start/end time")
+				pass
 			else:
 				pipeline = recording.start_playback(sequence_filename, realtime = False)
 				start_time = pipeline.wait_for_frames().timestamp
@@ -101,13 +100,19 @@ class ListicClientDB():
 				duration = (duration / datetime.timedelta(microseconds = 1)) / 1e3
 				end_time = start_time + duration
 
-		start_time = math.floor(start_time)
-		end_time = math.ceil(end_time)
+		time_conditions = []
+		if start_time:
+			start_time = math.floor(start_time)
+			time_conditions.append(str(start_time) + "ms <= time")
+		if end_time:
+			end_time = math.ceil(end_time)
+			time_conditions.append("time <= " + str(end_time) + "ms")
+		condition = ""
+		if len(time_conditions) > 0:
+			condition = "WHERE " + " and ".join(time_conditions)
 
-		query2D = 'SELECT "x", "y" FROM "autogen"."skeleton_detection_2d" WHERE ' + str(
-			start_time) + 'ms <= time and time <= ' + str(end_time) + 'ms  GROUP BY "skeleton_id", "keypoint"'
-		query3D = 'SELECT "x", "y", "z" FROM "autogen"."skeleton_detection_3d" WHERE ' + str(
-			start_time) + 'ms <= time and time <= ' + str(end_time) + 'ms  GROUP BY "skeleton_id", "keypoint"'
+		query2D = f'SELECT "x", "y" FROM "autogen"."skeleton_detection_2d" {condition} GROUP BY "skeleton_id", "keypoint"'
+		query3D = f'SELECT "x", "y", "z" FROM "autogen"."skeleton_detection_3d" {condition} GROUP BY "skeleton_id", "keypoint"'
 
 		results2D = self.client.query(query2D)
 		points2D = {}
