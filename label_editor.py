@@ -213,13 +213,13 @@ class VideoPlayer(tk.Canvas):
 		self.duration = -1
 
 		self.associated_slider = associated_slider
-		self.load_video_source(filename, state, resize_canvas = (width is not None or height is not None),
-		                       width = width, height = height)
 		self.refresh_rate = 1 / 30
 		self.refresh_function_id = None
 		self.refresh()
 
 		self.mouse_click_event = None
+
+		self.person_id = None
 
 		self.annotations = {}
 		self.slider_updated_once = False
@@ -235,6 +235,9 @@ class VideoPlayer(tk.Canvas):
 		for i, action in enumerate(actions):
 			self.current_action_markers[action] = -1
 			self.bind_all(str(i+1), lambda evt, act=action: self.begin_or_end_action_marker(evt, act))
+
+		self.load_video_source(filename, state, resize_canvas = (width is not None or height is not None),
+		                       width = width, height = height)
 
 	def backwards(self, event, time_delta = 2.0):
 		new_time = max(0, int(self.current_frame - time_delta * self.fps))
@@ -255,6 +258,10 @@ class VideoPlayer(tk.Canvas):
 
 		if self.filename is not None:
 			self.video_timestamp = rtv.get_timestamps_from_video(self.filename)
+			base, name, ext = rtv.get_filename_ext(self.filename)
+			if '_as_color_video_person_' in name:
+				self.person_id = int(name.split("_as_color_video_person_")[-1]) # Get the last part of the file name
+
 			self.cap = cv2.VideoCapture(self.filename)
 			self.fps = self.cap.get(cv2.CAP_PROP_FPS)
 			ret, frame = self.cap.read()
@@ -376,7 +383,8 @@ class VideoPlayer(tk.Canvas):
 			self.annotations[marker['category']].append({'from': marker['start'],
 			                                             'to': marker['finish'],
 			                                             'timestamp_start': marker['start'] + (timestamp_offset * 1000),
-			                                             'timestamp_end': marker['finish'] + (timestamp_offset * 1000) })
+			                                             'timestamp_end': marker['finish'] + (timestamp_offset * 1000),
+			                                             'person_id': self.person_id})
 
 	def load_annotations(self, annotations):
 		self.annotations = annotations
