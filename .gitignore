@@ -5,3 +5,8 @@
 *.so
 *.so.*
 *.cmake
+*.bag
+/annotations/
+/tests_recordings/
+/__pycache__/*
+/annotations/*
